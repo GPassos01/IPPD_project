@@ -4,9 +4,13 @@
 #include <limits.h>
 
 static unsigned long int next = 1;
+#define RAND_MAX 10
 
 int my_rand(void) {
-	return ((next = next * 1103515245 + 12345) % ((u_long) RAND_MAX + 1));
+	next = next * 1103515245 + 12345;
+	int resp = next % ((u_long) RAND_MAX + 1);
+	return resp;
+	//return ((next = next * 1103515245 + 12345) % ((u_long) RAND_MAX + 1));
 }
 
 void my_srand(unsigned int seed) {

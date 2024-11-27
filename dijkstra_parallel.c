@@ -6,7 +6,7 @@
 static unsigned long int next = 1;
 
 int my_rand(void) {
-	return ((next = next * 1103515245 + 12345) % ((u_long) RAND_MAX + 1));
+	return ((next = next * 1103515245 + 12345) % ((unsigned long) RAND_MAX + 1));
 }
 
 void my_srand(unsigned int seed) {
@@ -30,7 +30,6 @@ struct Graph *createRandomGraph(int nNodes, int nEdges, int seed) {
 	graph->w = (int **) malloc(sizeof(int *) * nNodes);
 
 	int k, v;
-    #pragma omp parallel for
 	for (v = 0; v < nNodes; v++) {
 		graph->edges[v] = (int *) malloc(sizeof(int) * nNodes);
 		graph->w[v] = (int *) malloc(sizeof(int) * nNodes);
@@ -38,7 +37,6 @@ struct Graph *createRandomGraph(int nNodes, int nEdges, int seed) {
 	}
 
 	int source = 0;
-    #pragma omp parallel for
 	for (source = 0; source < nNodes; source++) {
 		int nArestasVertice = (double) nEdges / nNodes //PRIVADO???
 				* (0.5 + my_rand() / (double) RAND_MAX); 
@@ -58,21 +56,24 @@ int *dijkstra(struct Graph *graph, int source) {
 	int *visited = (int *) malloc(sizeof(int) * nNodes);
 	int *distances = (int *) malloc(sizeof(int) * nNodes);
 	int k, v;
-    #pragma omp parallel for
+    #pragma omp parallel 
+	#pragma omp for
 	for (v = 0; v < nNodes; v++) {
 		distances[v] = INT_MAX;
 		visited[v] = 0;
 	}
 	distances[source] = 0;
 	visited[source] = 1;
+
     #pragma omp for
 	for (k = 0; k < graph->nEdges[source]; k++)
 		distances[graph->edges[source][k]] = graph->w[source][k];
 
+	#pragma omp for
 	for (v = 1; v < nNodes; v++) {
 		int min = 0;
 		int minValue = INT_MAX;    
-        #pragma omp for reduction (min:minValue) //como relacionar minValue com a posicao min = k???
+        // #pragma omp for reduction (min:minValue) //como relacionar minValue com a posicao min = k???
         for (k = 0; k < nNodes; k++)
             if (visited[k] == 0 && distances[k] < minValue) {
                 minValue = distances[k];
@@ -81,7 +82,8 @@ int *dijkstra(struct Graph *graph, int source) {
 
 		visited[min] = 1;
 
-        #pragma omp for reduction (+: distances[dest]) //TÁ ERRADO AAAAAAAAA!!!!
+		int dest;
+		#pragma omp private(dest) for reduction(+:distances[dest])
 		for (k = 0; k < graph->nEdges[min]; k++) {
 			int dest = graph->edges[min][k];
 			if (distances[dest] > distances[min] + graph->w[min][k])

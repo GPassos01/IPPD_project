@@ -2,15 +2,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
+#include <sys/time.h>
 
 static unsigned long int next = 1;
-#define RAND_MAX 10
 
 int my_rand(void) {
-	next = next * 1103515245 + 12345;
-	int resp = next % ((u_long) RAND_MAX + 1);
-	return resp;
-	//return ((next = next * 1103515245 + 12345) % ((u_long) RAND_MAX + 1));
+	return ((next = next * 1103515245 + 12345) % ((unsigned long) RAND_MAX + 1));
 }
 
 void my_srand(unsigned int seed) {
@@ -95,6 +92,10 @@ int *dijkstra(struct Graph *graph, int source) {
 
 int main(int argc, char ** argv) {
 
+	unsigned long i;
+	unsigned long phase = 0;
+	struct timeval start, stop;
+
 	int nNodes;
 	int nEdges;
 	int seed;
@@ -111,7 +112,15 @@ int main(int argc, char ** argv) {
 
 	struct Graph *graph = createRandomGraph(nNodes, nEdges, seed);
 
+	gettimeofday(&start, NULL);
+
 	int *dist = dijkstra(graph, 0);
+
+  	gettimeofday(&stop, NULL);
+
+	double tempo = \
+    (((double)(stop.tv_sec)*1000.0 + (double)(stop.tv_usec/1000.0)) - \
+    ((double)(start.tv_sec)*1000.0 + (double)(start.tv_usec/1000.0)));
 
 	double mean = 0;
 	int v;
@@ -119,6 +128,7 @@ int main(int argc, char ** argv) {
 		mean += dist[v];
 
 	fprintf(stdout, "%.2f\n", mean / nNodes);
+  	fprintf(stdout, "Tempo total gasto = %g ms\n", tempo);
 
 	return 0;
 }

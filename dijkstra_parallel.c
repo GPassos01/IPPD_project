@@ -57,7 +57,8 @@ int *dijkstra(struct Graph *graph, int source) {
 	int *visited = (int *) malloc(sizeof(int) * nNodes);
 	int *distances = (int *) malloc(sizeof(int) * nNodes);
 	int k, v;
-    #pragma omp parallel 
+
+    #pragma omp parallel // cria time de threads
 	#pragma omp for
 	for (v = 0; v < nNodes; v++) {
 		distances[v] = INT_MAX;
@@ -84,7 +85,7 @@ int *dijkstra(struct Graph *graph, int source) {
 		visited[min] = 1;
 		/*
 		------------- VERSAO PARALELIZADA SEM GANHOS SIGNIFICATIVOS ------------
-		(devido a testes realizados com entrada de 20000 vertices, 20000 arestas e semente 6)
+		(devido a testes realizados com entrada de 20000 vertices, 10000 arestas e semente 6)
 		int dest;
 		#pragma omp private(dest) for reduction(+:distances[dest])
 		for (k = 0; k < graph->nEdges[min]; k++) {
@@ -96,7 +97,6 @@ int *dijkstra(struct Graph *graph, int source) {
 
 		for (k = 0; k < graph->nEdges[min]; k++) {
 			int dest = graph->edges[min][k];
-			dest = graph->edges[min][k];
 			if (distances[dest] > distances[min] + graph->w[min][k])
 				distances[dest] = distances[min] + graph->w[min][k];
 		}

@@ -39,7 +39,7 @@ struct Graph *createRandomGraph(int nNodes, int nEdges, int seed) {
 
 	int source = 0;
 	for (source = 0; source < nNodes; source++) {
-		int nArestasVertice = (double) nEdges / nNodes //PRIVADO???
+		int nArestasVertice = (double) nEdges / nNodes 
 				* (0.5 + my_rand() / (double) RAND_MAX); 
         for (k = nArestasVertice; k >= 0; k--) {
 			int dest = my_rand() % nNodes;
@@ -57,50 +57,52 @@ int *dijkstra(struct Graph *graph, int source) {
 	int *visited = (int *) malloc(sizeof(int) * nNodes);
 	int *distances = (int *) malloc(sizeof(int) * nNodes);
 	int k, v;
-    #pragma omp parallel 
-	#pragma omp for
-	for (v = 0; v < nNodes; v++) {
-		distances[v] = INT_MAX;
-		visited[v] = 0;
-	}
-	distances[source] = 0;
-	visited[source] = 1;
-
-    #pragma omp for
-	for (k = 0; k < graph->nEdges[source]; k++)
-		distances[graph->edges[source][k]] = graph->w[source][k];
-
-	#pragma omp for
-	for (v = 1; v < nNodes; v++) {
-		int min = 0;
-		int minValue = INT_MAX;    
-        // #pragma omp for reduction (min:minValue) //como relacionar minValue com a posicao min = k???
-        for (k = 0; k < nNodes; k++)
-            if (visited[k] == 0 && distances[k] < minValue) {
-                minValue = distances[k];
-                min = k;
-            }
-
-		visited[min] = 1;
-		/*
-		------------- VERSAO PARALELIZADA SEM GANHOS SIGNIFICATIVOS ------------
-		(devido a testes realizados com entrada de 20000 vertices, 20000 arestas e semente 6)
-		int dest;
-		#pragma omp private(dest) for reduction(+:distances[dest])
-		for (k = 0; k < graph->nEdges[min]; k++) {
-			dest = graph->edges[min][k];
-			if (distances[dest] > distances[min] + graph->w[min][k])
-				distances[dest] = distances[min] + graph->w[min][k];
+    #pragma omp parallel // cria time de threads
+	{
+		#pragma omp for
+		for (v = 0; v < nNodes; v++) {
+			distances[v] = INT_MAX;
+			visited[v] = 0;
 		}
-		*/
+		distances[source] = 0;
+		visited[source] = 1;
 
-		for (k = 0; k < graph->nEdges[min]; k++) {
-			int dest = graph->edges[min][k];
-			dest = graph->edges[min][k];
-			if (distances[dest] > distances[min] + graph->w[min][k])
-				distances[dest] = distances[min] + graph->w[min][k];
+		#pragma omp for
+		for (k = 0; k < graph->nEdges[source]; k++)
+			distances[graph->edges[source][k]] = graph->w[source][k];
+
+		#pragma omp for
+		for (v = 1; v < nNodes; v++) {
+			int min = 0;
+			int minValue = INT_MAX;    
+			// #pragma omp for reduction (min:minValue) //como relacionar minValue com a posicao min = k???
+			for (k = 0; k < nNodes; k++)
+				if (visited[k] == 0 && distances[k] < minValue) {
+					minValue = distances[k];
+					min = k;
+				}
+
+			visited[min] = 1;
+			/*
+			------------- VERSAO PARALELIZADA SEM GANHOS SIGNIFICATIVOS ------------
+			(devido a testes realizados com entrada de 20000 vertices, 10000 arestas e semente 6)
+			int dest;
+			#pragma omp private(dest) for reduction(+:distances[dest])
+			for (k = 0; k < graph->nEdges[min]; k++) {
+				dest = graph->edges[min][k];
+				if (distances[dest] > distances[min] + graph->w[min][k])
+					distances[dest] = distances[min] + graph->w[min][k];
+			}
+			*/
+
+			for (k = 0; k < graph->nEdges[min]; k++) {
+				int dest = graph->edges[min][k];
+				dest = graph->edges[min][k];
+				if (distances[dest] > distances[min] + graph->w[min][k])
+					distances[dest] = distances[min] + graph->w[min][k];
+			}
+
 		}
-
 	}
 
 	free(visited);

@@ -39,7 +39,7 @@ struct Graph *createRandomGraph(int nNodes, int nEdges, int seed) {
 
 	int source = 0;
 	for (source = 0; source < nNodes; source++) {
-		int nArestasVertice = (double) nEdges / nNodes //PRIVADO???
+		int nArestasVertice = (double) nEdges / nNodes 
 				* (0.5 + my_rand() / (double) RAND_MAX); 
         for (k = nArestasVertice; k >= 0; k--) {
 			int dest = my_rand() % nNodes;

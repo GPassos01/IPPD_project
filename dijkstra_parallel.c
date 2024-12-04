@@ -87,8 +87,8 @@ int *dijkstra(struct Graph *graph, int source) {
 			/*
 			------------- VERSAO PARALELIZADA SEM GANHOS SIGNIFICATIVOS ------------
 			(devido a testes realizados com entrada de 20000 vertices, 10000 arestas e semente 6)*/
+			/*
 			int dest;
-			//#pragma omp parallel for private(dest) reduction(+:distances[dest])
 			#pragma omp parallel for private(dest)
 			for (k = 0; k < graph->nEdges[min]; k++) {
 				dest = graph->edges[min][k];
@@ -97,13 +97,14 @@ int *dijkstra(struct Graph *graph, int source) {
 					distances[dest] = distances[min] + graph->w[min][k];
 				}
 			}
+			*/
 			
-			/*
+			
 			for (k = 0; k < graph->nEdges[min]; k++) {
 				int dest = graph->edges[min][k];
 				if (distances[dest] > distances[min] + graph->w[min][k])
 					distances[dest] = distances[min] + graph->w[min][k];
-			}*/
+			}
 
 		}
 	}

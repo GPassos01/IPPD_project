@@ -58,51 +58,55 @@ int *dijkstra(struct Graph *graph, int source) {
 	int *distances = (int *) malloc(sizeof(int) * nNodes);
 	int k, v;
 
-    #pragma omp parallel // cria time de threads
-	#pragma omp for
-	for (v = 0; v < nNodes; v++) {
-		distances[v] = INT_MAX;
-		visited[v] = 0;
-	}
-	distances[source] = 0;
-	visited[source] = 1;
-
-    #pragma omp for
-	for (k = 0; k < graph->nEdges[source]; k++)
-		distances[graph->edges[source][k]] = graph->w[source][k];
-
-	#pragma omp for
-	for (v = 1; v < nNodes; v++) {
-		int min = 0;
-		int minValue = INT_MAX;    
-        // #pragma omp for reduction (min:minValue) //como relacionar minValue com a posicao min = k???
-        for (k = 0; k < nNodes; k++)
-            if (visited[k] == 0 && distances[k] < minValue) {
-                minValue = distances[k];
-                min = k;
-            }
-
-		visited[min] = 1;
-		/*
-		------------- VERSAO PARALELIZADA SEM GANHOS SIGNIFICATIVOS ------------
-		(devido a testes realizados com entrada de 20000 vertices, 10000 arestas e semente 6)
-		int dest;
-		#pragma omp private(dest) for reduction(+:distances[dest])
-		for (k = 0; k < graph->nEdges[min]; k++) {
-			dest = graph->edges[min][k];
-			if (distances[dest] > distances[min] + graph->w[min][k])
-				distances[dest] = distances[min] + graph->w[min][k];
+    //#pragma omp parallel // cria time de threads
+	{
+		#pragma omp parallel for
+		for (v = 0; v < nNodes; v++) {
+			distances[v] = INT_MAX;
+			visited[v] = 0;
 		}
-		*/
+		distances[source] = 0;
+		visited[source] = 1;
+	
+		#pragma omp parallel for
+		for (k = 0; k < graph->nEdges[source]; k++)
+			distances[graph->edges[source][k]] = graph->w[source][k];
 
-		for (k = 0; k < graph->nEdges[min]; k++) {
-			int dest = graph->edges[min][k];
-			if (distances[dest] > distances[min] + graph->w[min][k])
-				distances[dest] = distances[min] + graph->w[min][k];
+		
+		for (v = 1; v < nNodes; v++) {
+			int min = 0;
+			int minValue = INT_MAX;    
+			// #pragma omp for reduction (min:minValue) //como relacionar minValue com a posicao min = k???
+			for (k = 0; k < nNodes; k++)
+				if (visited[k] == 0 && distances[k] < minValue) {
+					minValue = distances[k];
+					min = k;
+				}
+
+			visited[min] = 1;
+			/*
+			------------- VERSAO PARALELIZADA SEM GANHOS SIGNIFICATIVOS ------------
+			(devido a testes realizados com entrada de 20000 vertices, 10000 arestas e semente 6)*/
+			int dest;
+			//#pragma omp parallel for private(dest) reduction(+:distances[dest])
+			#pragma omp parallel for private(dest)
+			for (k = 0; k < graph->nEdges[min]; k++) {
+				dest = graph->edges[min][k];
+				if (distances[dest] > distances[min] + graph->w[min][k]){
+				#pragma omp critical
+					distances[dest] = distances[min] + graph->w[min][k];
+				}
+			}
+			
+			/*
+			for (k = 0; k < graph->nEdges[min]; k++) {
+				int dest = graph->edges[min][k];
+				if (distances[dest] > distances[min] + graph->w[min][k])
+					distances[dest] = distances[min] + graph->w[min][k];
+			}*/
+
 		}
-
 	}
-
 	free(visited);
 
 	return distances;
